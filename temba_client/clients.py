@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import random
 
 import requests
 import time
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 MAX_RETRIES = 5
+MAX_BACKOFF_POWER = 6
 
 
 class BaseClient(object):
@@ -370,6 +372,9 @@ class BaseCursorClient(BaseClient):
                 retries += 1
 
                 if retries < MAX_RETRIES and ex.retry_after:
-                    time.sleep(ex.retry_after)
+                    server_wait_time = ex.retry_after
+                    backoff_wait_time = random.uniform(0, 2 ** (min(retries, MAX_BACKOFF_POWER)))
+
+                    time.sleep(server_wait_time + backoff_wait_time)
                 else:
                     raise ex
